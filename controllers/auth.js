@@ -21,7 +21,7 @@ exports.register = async (req, res, next) => {
     // res.status(200).json({ success: true, token });
     sendTokenResponse(user, 200, res);
   } catch (err) {
-    res.status(400).json({ success: false });
+    res.status(400).json({ success: false, msg: err.message });
     console.log(err.stack);
   }
 };
