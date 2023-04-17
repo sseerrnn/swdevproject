@@ -104,7 +104,38 @@ exports.getShop = async (req, res, next) => {
 //@access Private
 exports.createShop = async (req, res, next) => {
   try {
-    const shop = await Shop.create(req.body);
+    // verify operation field
+    if (req.body.operation) {
+      // check length of operation array
+      if (req.body.operation.length != 7) {
+        return res.status(400).json({
+          success: false,
+          message: "Operation field must have 7 elements",
+        });
+      }
+
+      req.body.operation.forEach((op) => {
+        // check if start is less than end
+        if (op.start > op.end) {
+          return res.status(400).json({
+            success: false,
+            message: "Start time must be less than end time",
+          });
+        }
+
+        // check if start and end are in 24 * 60 minutes format
+        if (op.start < 0 || op.start > 1440 || op.end < 0 || op.end > 1440) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "Start and end time must be in between 0 - 1440 minutes format",
+          });
+        }
+      });
+    }
+    const shop = (await Shop.create(req.body)).toObject();
+    delete shop.__v;
+    delete shop.id;
     res.status(200).json({ success: true, data: shop });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
@@ -116,15 +147,19 @@ exports.createShop = async (req, res, next) => {
 //@access Private
 exports.updateShop = async (req, res, next) => {
   try {
-    const shop = await Shop.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    const shop = (
+      await Shop.findByIdAndUpdate(req.params.id, req.body, {
+        new: true,
+        runValidators: true,
+      })
+    ).toObject();
 
     if (!shop) {
       return res.status(400).json({ success: false });
     }
 
+    delete shop.__v;
+    delete shop.id;
     res.status(200).json({ success: true, data: shop });
   } catch {
     res.status(400).json({ success: false });
