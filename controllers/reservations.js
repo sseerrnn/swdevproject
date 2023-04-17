@@ -65,6 +65,60 @@ exports.addReservation = async (req, res, next) => {
     req.body.user = req.user.id;
     req.body.shop = req.params.shopId;
 
+    //Get index date of the week
+    var date = new Date(req.body.resvDate);
+    var day = date.getDay() || 7;
+    if (day !== 1) date.setHours(-24 * (day - 1));
+    var index = Math.floor(
+      (new Date(req.body.resvDate).valueOf() - date.valueOf()) /
+        (24 * 60 * 60 * 1000)
+    );
+
+    //Get shop
+    const shop = await Shop.findById(req.params.shopId);
+    if (!shop) {
+      return res.status(404).json({
+        success: false,
+        message: `No shop with the id of ${req.params.shopId}`,
+      });
+    }
+
+    //Initialize schedule array
+    var schedule = new Array(48).fill(false);
+    for (
+      var j = shop.operation[index].start;
+      j < shop.operation[index].end;
+      j += 30
+    ) {
+      schedule[Math.floor(j / 30)] = true;
+    }
+
+    //Fill schedule array with reservations
+    const reservations = await Reservation.find({
+      shop: req.params.shopId,
+      resvDate: req.body.resvDate,
+    });
+
+    for (var i = 0; i < reservations.length; i++) {
+      var start = Math.floor(reservations[i].resvTime.start / 30);
+      var end = Math.floor(reservations[i].resvTime.end / 30);
+      for (var j = start; j < end; j++) {
+        schedule[j] = false;
+      }
+    }
+
+    //Check if the reservation is available
+    var start = Math.floor(req.body.resvTime.start / 30);
+    var end = Math.floor(req.body.resvTime.end / 30);
+    for (var i = start; i < end; i++) {
+      if (!schedule[i]) {
+        return res.status(400).json({
+          success: false,
+          message: `The shop with ID ${req.params.shopId} is not available at this time`,
+        });
+      }
+    }
+
     //Check for existed reservation
     const existedReservation = await Reservation.find({
       user: req.user.id,
@@ -76,15 +130,6 @@ exports.addReservation = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: `The user with ID ${req.user.id} has already made 3 reservations`,
-      });
-    }
-
-    const shop = await Shop.findById(req.params.shopId);
-
-    if (!shop) {
-      return res.status(404).json({
-        success: false,
-        message: `No shop with the id of ${req.params.shopId}`,
       });
     }
 
