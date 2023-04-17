@@ -67,8 +67,10 @@ exports.addReservation = async (req, res, next) => {
 
     //Get index date of the week
     var date = new Date(req.body.resvDate);
+    // Get current day number, converting Sun. to 7
     var day = date.getDay() || 7;
-    if (day !== 1) date.setHours(-24 * (day - 1));
+    // Only manipulate the date if it isn't Mon.
+    if (day !== 1) date.setHours(-24 * (day - 1)); // Set the hours to day number minus 1 and multiplied by negative 24
     var index = Math.floor(
       (new Date(req.body.resvDate).valueOf() - date.valueOf()) /
         (24 * 60 * 60 * 1000)

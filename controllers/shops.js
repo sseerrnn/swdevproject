@@ -256,8 +256,10 @@ exports.getShopSchedule = async (req, res, next) => {
 
     reservations.forEach((reservation) => {
       var date = new Date(reservation.resvDate);
+      // Get current day number, converting Sun. to 7
       var day = date.getDay() || 7;
-      if (day !== 1) date.setHours(-24 * (day - 1));
+      // Only manipulate the date if it isn't Mon.
+      if (day !== 1) date.setHours(-24 * (day - 1)); // Set the hours to day number minus 1 and multiplied by negative 24
       var index = Math.floor(
         (reservation.resvDate.valueOf() - date.valueOf()) /
           (24 * 60 * 60 * 1000)
