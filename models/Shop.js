@@ -54,3 +54,4 @@ ShopSchema.pre("remove", async function (next) {
 });
 
 module.exports = mongoose.model("Shop", ShopSchema);
+module.exports.operationSchema = operationSchema;

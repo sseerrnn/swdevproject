@@ -5,6 +5,7 @@ const { protect, authorize } = require("../middleware/auth");
 const {
   getShops,
   getShop,
+  getShopSchedule,
   createShop,
   updateShop,
   deleteShop,
@@ -21,5 +22,7 @@ router
   .get(getShop)
   .put(protect, authorize("admin"), updateShop)
   .delete(protect, authorize("admin"), deleteShop);
+
+router.route("/:id/schedule").get(getShopSchedule);
 
 module.exports = router;

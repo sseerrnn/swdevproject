@@ -1,4 +1,5 @@
 const Shop = require("../models/Shop");
+const Reservation = require("../models/Reservation");
 
 //@desc Get all shops
 //@route GET /api/v1/shops
@@ -14,7 +15,6 @@ exports.getShops = async (req, res, next) => {
 
   // Loop over removeFields and delete them from reqQuery
   removeFields.forEach((param) => delete reqQuery[param]);
-  console.log(reqQuery);
 
   // Create query string
   let queryStr = JSON.stringify(reqQuery);
@@ -90,7 +90,7 @@ exports.getShop = async (req, res, next) => {
     const shop = await Shop.findById(req.params.id);
 
     if (!shop) {
-      return res.status(400).json({ success: false });
+      return res.status(404).json({ success: false });
     }
 
     res.status(200).json({ success: true, data: shop });
@@ -138,7 +138,7 @@ exports.createShop = async (req, res, next) => {
     delete shop.id;
     res.status(200).json({ success: true, data: shop });
   } catch (err) {
-    res.status(400).json({ success: false, message: err.message });
+    res.status(400).json({ success: false });
   }
 };
 
@@ -184,7 +184,7 @@ exports.updateShop = async (req, res, next) => {
     ).toObject();
 
     if (!shop) {
-      return res.status(400).json({ success: false });
+      return res.status(404).json({ success: false });
     }
 
     delete shop.__v;
@@ -203,7 +203,7 @@ exports.deleteShop = async (req, res, next) => {
     const shop = await Shop.findById(req.params.id);
 
     if (!shop) {
-      return res.status(400).json({
+      return res.status(404).json({
         success: false,
         message: `Bootcamp not found with id of ${req.params.id}`,
       });
@@ -212,6 +212,65 @@ exports.deleteShop = async (req, res, next) => {
     shop.remove();
     res.status(200).json({ success: true, data: {} });
   } catch {
+    res.status(400).json({ success: false });
+  }
+};
+
+//@desc Get schedule for reservation
+//@route GET /api/v1/shops/:id/schedule
+//@access Public
+exports.getShopSchedule = async (req, res, next) => {
+  try {
+    var start = new Date(req.query.date);
+    // Get current day number, converting Sun. to 7
+    var day = start.getDay() || 7;
+    // Only manipulate the date if it isn't Mon.
+    if (day !== 1) start.setHours(-24 * (day - 1)); // Set the hours to day number minus 1 and multiplied by negative 24
+
+    var end = new Date(start.valueOf() + 7 * 24 * 60 * 60 * 1000 - 1);
+
+    const reservations = await Reservation.find({
+      shop: req.params.id,
+      date: { $gte: start, $lte: end },
+    });
+
+    const shop = await Shop.findById(req.params.id);
+    if (!shop) {
+      return res.status(404).json({ success: false });
+    }
+
+    // initialize schedule array
+    var schedule = [];
+    for (var i = 0; i < 7; i++) {
+      operation = new Array(48).fill(false);
+      shop.operation.forEach((op) => {
+        for (var j = op.start; j < op.end; j += 30) {
+          operation[Math.floor(j / 30)] = true;
+        }
+      });
+      schedule.push({
+        date: new Date(start.valueOf() + i * 24 * 60 * 60 * 1000),
+        slots: operation,
+      });
+    }
+
+    reservations.forEach((reservation) => {
+      var date = new Date(reservation.resvDate);
+      var day = date.getDay() || 7;
+      if (day !== 1) date.setHours(-24 * (day - 1));
+      var index = Math.floor(
+        (reservation.resvDate.valueOf() - date.valueOf()) /
+          (24 * 60 * 60 * 1000)
+      );
+      var start = Math.floor(reservation.resvTime.start / 30);
+      var end = Math.floor(reservation.resvTime.end / 30);
+      for (var i = start; i < end; i++) {
+        schedule[index].slots[i] = false;
+      }
+    });
+
+    res.status(200).json({ success: true, data: schedule });
+  } catch (error) {
     res.status(400).json({ success: false });
   }
 };
