@@ -1,6 +1,29 @@
 const Review = require("../models/Review");
 const Shop = require("../models/Shop");
 
+//desc update shop average rating
+//@access Private
+const updateAverageRating = async (shopId) => {
+  const obj = await Review.aggregate([
+    {
+      $match: { shop: shopId },
+    },
+    {
+      $group: {
+        _id: "$shop",
+        averageRating: { $avg: "$rating" },
+      },
+    },
+  ]);
+  try {
+    await Shop.findByIdAndUpdate(shopId, {
+      averageRating: obj[0].averageRating,
+    });
+  } catch (err) {
+    console.log(err);
+  }
+};
+
 //@desc Get all reviews
 //@route GET /api/v1/reviews
 //@access Public
@@ -61,6 +84,8 @@ exports.addReview = async (req, res, next) => {
 
     const review = await Review.create(req.body);
 
+    updateAverageRating(shop._id);
+
     res.status(200).json({ success: true, data: review });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
@@ -86,6 +111,8 @@ exports.updateReview = async (req, res, next) => {
       new: true,
       runValidators: true,
     });
+
+    updateAverageRating(review.shop);
     res.status(200).json({ success: true, data: review });
   } catch (err) {
     res.status(400).json({ success: false });
@@ -108,6 +135,7 @@ exports.deleteReview = async (req, res, next) => {
     }
 
     await review.remove();
+    updateAverageRating(review.shop);
     res.status(200).json({ success: true, data: {} });
   } catch (err) {
     res.status(400).json({ success: false });
