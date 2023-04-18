@@ -1,5 +1,6 @@
 const Review = require("../models/Review");
 const Shop = require("../models/Shop");
+const mongoose = require("mongoose");
 
 //desc update shop average rating
 //@access Private
@@ -74,21 +75,22 @@ exports.getReview = async (req, res, next) => {
 // @route POST /api/v1/reviews
 // @access Private
 exports.addReview = async (req, res, next) => {
+  //using transaction
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     req.body.user = req.user.id;
-    const shop = await Shop.findById(req.body.shop);
-
-    if (!shop) {
-      return res.status(400).json({ success: false });
-    }
-
     const review = await Review.create(req.body);
-
-    updateAverageRating(shop._id);
-
+    await review.save({ session: session });
+    await updateAverageRating(review.shop);
+    await session.commitTransaction();
     res.status(200).json({ success: true, data: review });
   } catch (err) {
+    await session.abortTransaction();
     res.status(400).json({ success: false, message: err.message });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -96,6 +98,9 @@ exports.addReview = async (req, res, next) => {
 // @route PUT /api/v1/reviews/:id
 // @access Private
 exports.updateReview = async (req, res, next) => {
+  //using transaction
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     let review = await Review.findById(req.params.id);
     if (!review) {
@@ -111,11 +116,16 @@ exports.updateReview = async (req, res, next) => {
       new: true,
       runValidators: true,
     });
+    await review.save({ session: session });
+    await updateAverageRating(review.shop);
+    await session.commitTransaction();
 
-    updateAverageRating(review.shop);
     res.status(200).json({ success: true, data: review });
   } catch (err) {
-    res.status(400).json({ success: false });
+    await session.abortTransaction();
+    res.status(400).json({ success: false, message: err.message });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -123,6 +133,9 @@ exports.updateReview = async (req, res, next) => {
 // @route DELETE /api/v1/reviews/:id
 // @access Private
 exports.deleteReview = async (req, res, next) => {
+  //using transaction
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     let review = await Review.findById(req.params.id);
     if (!review) {
@@ -133,11 +146,14 @@ exports.deleteReview = async (req, res, next) => {
         .status(401)
         .json({ success: false, message: "Not authorized to delete review" });
     }
-
-    await review.remove();
-    updateAverageRating(review.shop);
+    await review.remove({ session: session });
+    await updateAverageRating(review.shop);
+    await session.commitTransaction();
     res.status(200).json({ success: true, data: {} });
   } catch (err) {
-    res.status(400).json({ success: false });
+    await session.abortTransaction();
+    res.status(400).json({ success: false, message: err.message });
+  } finally {
+    session.endSession();
   }
 };
