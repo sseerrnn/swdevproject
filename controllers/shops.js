@@ -114,24 +114,42 @@ exports.createShop = async (req, res, next) => {
         });
       }
 
-      req.body.operation.forEach((op) => {
+      var isValid = {
+        statusCode: 200,
+        message: "success",
+      };
+      req.body.operation.every((op) => {
+        // parse start and end time to number
+        op.start = Number(op.start);
+        op.end = Number(op.end);
+
         // check if start is less than end
         if (op.start > op.end) {
-          return res.status(400).json({
-            success: false,
+          isValid = {
+            statusCode: 400,
             message: "Start time must be less than end time",
-          });
+          };
+          return false;
         }
 
         // check if start and end are in 24 * 60 minutes format
         if (op.start < 0 || op.start > 1440 || op.end < 0 || op.end > 1440) {
-          return res.status(400).json({
-            success: false,
+          isValid = {
+            statusCode: 400,
             message:
               "Start and end time must be in between 0 - 1440 minutes format",
-          });
+          };
+          return false;
         }
+        return true;
       });
+
+      if (isValid.statusCode != 200) {
+        return res.status(isValid.statusCode).json({
+          success: false,
+          message: isValid.message,
+        });
+      }
     }
     const shop = (await Shop.create(req.body)).toObject();
     delete shop.__v;
@@ -242,12 +260,13 @@ exports.getShopSchedule = async (req, res, next) => {
     // initialize schedule array
     var schedule = [];
     for (var i = 0; i < 7; i++) {
-      operation = new Array(48).fill(false);
-      shop.operation.forEach((op) => {
-        for (var j = op.start; j < op.end; j += 30) {
-          operation[Math.floor(j / 30)] = true;
-        }
-      });
+      operation = new Array(48).fill(0);
+      var employee = shop.operation[i].employee;
+      var opStart = shop.operation[i].start;
+      var opEnd = shop.operation[i].end;
+      for (var j = opStart; j < opEnd; j += 30) {
+        operation[Math.floor(j / 30)] = employee;
+      }
       schedule.push({
         date: new Date(start.valueOf() + i * 24 * 60 * 60 * 1000),
         slots: operation,
@@ -267,7 +286,7 @@ exports.getShopSchedule = async (req, res, next) => {
       var start = Math.floor(reservation.resvTime.start / 30);
       var end = Math.floor(reservation.resvTime.end / 30);
       for (var i = start; i < end; i++) {
-        schedule[index].slots[i] = false;
+        schedule[index].slots[i] -= 1;
       }
     });
 

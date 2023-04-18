@@ -4,6 +4,7 @@ const operationSchema = new mongoose.Schema(
   {
     start: Number,
     end: Number,
+    employee: Number,
   },
   { _id: false }
 );
