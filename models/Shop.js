@@ -27,6 +27,12 @@ const ShopSchema = new mongoose.Schema(
       required: [true, "Please add open-close time"],
       maxlength: [50, "Open-close time can not be more than 50 characters"],
     },
+    averageRating: {
+      type: Number,
+      min: 0,
+      max: [5, "Rating can not be more than 5"],
+      default: 0,
+    },
   },
   {
     toJSON: { virtuals: true },
