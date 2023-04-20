@@ -157,3 +157,54 @@ exports.deleteReview = async (req, res, next) => {
     session.endSession();
   }
 };
+
+// @desc Get stats each shop
+// @route GET /api/v1/reviews/stats/:shopId
+// @access Private
+exports.getStats = async (req, res, next) => {
+  console.log(req.params.shopId);
+
+  try {
+    const stats = await Review.aggregate([
+      {
+        $match: { shop: mongoose.Types.ObjectId(req.params.shopId) },
+      },
+
+      {
+        $group: {
+          _id: "$shop",
+          numReviews: { $sum: 1 },
+          averageRating: { $avg: "$rating" },
+          max: { $max: "$rating" },
+          min: { $min: "$rating" },
+        },
+      },
+    ]);
+    const numReviewsEachRating = await Review.aggregate([
+      {
+        $match: { shop: mongoose.Types.ObjectId(req.params.shopId) },
+      },
+
+      {
+        $group: {
+          _id: "$rating",
+          numReviews: { $sum: 1 },
+        },
+      },
+      {
+        $set: {
+          rating: "$_id",
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+        },
+      },
+    ]);
+    stats[0].numReviewsEachRating = numReviewsEachRating;
+    res.status(200).json({ success: true, data: stats[0] });
+  } catch (err) {
+    res.status(400).json({ success: false });
+  }
+};
