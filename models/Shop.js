@@ -32,6 +32,12 @@ const ShopSchema = new mongoose.Schema(
       ],
     },
     operation: [operationSchema],
+    averageRating: {
+      type: Number,
+      min: 0,
+      max: [5, "Rating can not be more than 5"],
+      default: 0,
+    },
   },
   {
     toJSON: { virtuals: true },
