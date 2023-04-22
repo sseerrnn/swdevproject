@@ -1,8 +1,13 @@
 const mongoose = require("mongoose");
+const { operationSchema } = require("./Shop");
 
 const ReservationSchema = new mongoose.Schema({
   resvDate: {
     type: Date,
+    required: true,
+  },
+  resvTime: {
+    type: operationSchema,
     required: true,
   },
   user: {

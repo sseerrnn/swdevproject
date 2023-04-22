@@ -1,5 +1,14 @@
 const mongoose = require("mongoose");
 
+const operationSchema = new mongoose.Schema(
+  {
+    start: Number,
+    end: Number,
+    employee: Number,
+  },
+  { _id: false }
+);
+
 const ShopSchema = new mongoose.Schema(
   {
     name: {
@@ -22,11 +31,7 @@ const ShopSchema = new mongoose.Schema(
         "Please add a valid phone number",
       ],
     },
-    openTime: {
-      type: String,
-      required: [true, "Please add open-close time"],
-      maxlength: [50, "Open-close time can not be more than 50 characters"],
-    },
+    operation: [operationSchema],
     averageRating: {
       type: Number,
       min: 0,
@@ -41,7 +46,7 @@ const ShopSchema = new mongoose.Schema(
 );
 
 //Reverse populate with virtuals
-ShopSchema.virtual("reservation", {
+ShopSchema.virtual("reservations", {
   ref: "Reservation",
   localField: "_id",
   foreignField: "shop",
@@ -56,3 +61,4 @@ ShopSchema.pre("remove", async function (next) {
 });
 
 module.exports = mongoose.model("Shop", ShopSchema);
+module.exports.operationSchema = operationSchema;
