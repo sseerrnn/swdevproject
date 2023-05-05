@@ -176,23 +176,30 @@ exports.updateShop = async (req, res, next) => {
         });
       }
 
+      var isValid = {
+        statusCode: 200,
+        message: "success",
+      };
       req.body.operation.forEach((op) => {
         // check if start is less than end
         if (op.start > op.end) {
-          return res.status(400).json({
-            success: false,
+          isValid = {
+            statusCode: 400,
             message: "Start time must be less than end time",
-          });
+          };
+          return false;
         }
 
         // check if start and end are in 24 * 60 minutes format
         if (op.start < 0 || op.start > 1440 || op.end < 0 || op.end > 1440) {
-          return res.status(400).json({
-            success: false,
+          isValid = {
+            statusCode: 400,
             message:
               "Start and end time must be in between 0 - 1440 minutes format",
-          });
+          };
+          return false;
         }
+        return true;
       });
     }
     const shop = (

@@ -31,6 +31,7 @@ const updateAverageRating = async (shopId) => {
 exports.getReviews = async (req, res, next) => {
   try {
     const reviews = await Review.find()
+      .populate("shop", { name: 1, address: 1, tel: 1 })
       .populate({
         path: "shop",
         select: "name address tel",
@@ -42,7 +43,7 @@ exports.getReviews = async (req, res, next) => {
 
     res.status(200).json({ success: true, data: reviews });
   } catch (err) {
-    res.status(400).json({ success: false });
+    res.status(400).json({ success: false, message: err.message });
   }
 };
 
@@ -52,6 +53,7 @@ exports.getReviews = async (req, res, next) => {
 exports.getReview = async (req, res, next) => {
   try {
     const review = await Review.findById(req.params.id)
+      .populate("shop")
       .populate({
         path: "shop",
         select: "name address tel",
