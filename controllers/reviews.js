@@ -33,7 +33,7 @@ exports.getReviews = async (req, res, next) => {
     const reviews = await Review.find()
       .populate({
         path: "shop",
-        select: "name description tel",
+        select: "name address tel",
       })
       .populate({
         path: "user",
@@ -54,7 +54,7 @@ exports.getReview = async (req, res, next) => {
     const review = await Review.findById(req.params.id)
       .populate({
         path: "shop",
-        select: "name description tel",
+        select: "name address tel",
       })
       .populate({
         path: "user",
