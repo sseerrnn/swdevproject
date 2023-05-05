@@ -1,5 +1,9 @@
 const mongoose = require("mongoose");
 
+/**
+ * @param start must be divisible by 30 and in range of 0 - 1440
+ * @param end must be divisible by 30 and in range of 0 -1440
+ */
 const operationSchema = new mongoose.Schema(
   {
     start: Number,
@@ -31,6 +35,17 @@ const ShopSchema = new mongoose.Schema(
         "Please add a valid phone number",
       ],
     },
+    /* Input example
+      "operation": [
+        {"start":"600","end":"720", "employee": "2"},
+        {"start":"600","end":"720", "employee": "2"},
+        {"start":"600","end":"720", "employee": "2"},
+        {"start":"600","end":"1200", "employee": "2"},
+        {"start":"600","end":"1200", "employee": "2"},
+        {"start":"800","end":"1200", "employee": "2"},
+        {"start":"800","end":"1200", "employee": "2"}
+      ]
+     */
     operation: [operationSchema],
     averageRating: {
       type: Number,
