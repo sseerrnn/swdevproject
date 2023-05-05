@@ -216,8 +216,8 @@ exports.updateShop = async (req, res, next) => {
     delete shop.__v;
     delete shop.id;
     res.status(200).json({ success: true, data: shop });
-  } catch {
-    res.status(400).json({ success: false });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
